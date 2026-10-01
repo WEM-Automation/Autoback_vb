@@ -651,10 +651,10 @@ Dim dfile As File
                                 Dim existingbackupfile As String        '2.22
                                 
                                 fs.CreateFolder destpath & "\temp"
-                                existingbackupfile = Dir(destpath & "\*.SQB")
+                                existingbackupfile = Dir(destpath & "\*.zip")
                                 If fs.FileExists(destpath & "\" & existingbackupfile) = True Then
                                     fs.Deletefile (destpath & "\temp\*.*")
-                                    fs.MoveFile destpath & "\" & "*.sqb", destpath & "\temp\"
+                                    fs.MoveFile destpath & "\" & "*.zip", destpath & "\temp\"
                                 End If
                                 'V2.20
                                 If cfg_System = stFeed Or cfg_System = stUnknown Then
@@ -704,10 +704,10 @@ Dim rslt
 '                                    MsgBox "bf=" & sql_BaseFolder
                                 End If
                                 Sleep 2000          '2.22
-                                If Len(Dir(destpath & "\*.SQB")) > 0 Then
-                                    fs.Deletefile destpath & "\temp\*.SQB", True
+                                If Len(Dir(destpath & "\*.zip")) > 0 Then
+                                    fs.Deletefile destpath & "\temp\*.zip", True
                                 Else
-                                    fs.MoveFile destpath & "\temp\" & "*.sqb", destpath & "\"
+                                    fs.MoveFile destpath & "\temp\" & "*.zip", destpath & "\"
                                     g_oAppLog.AddEntry "database backup failed - keeping old one"
                                 End If
                             Else    '2.00
@@ -717,7 +717,7 @@ Dim rslt
                                     If dfile.DateLastModified <> sfile.DateLastModified Then
                                         fs.CopyFile srcpath & "\" & filefound, destpath & "\" & filefound
                                     End If
-                                ElseIf InStr(1, filefound, ".sqb", vbTextCompare) > 0 Then
+                                ElseIf InStr(1, filefound, ".zip", vbTextCompare) > 0 Then
                                     If InStr(1, filefound, "__archive_", vbTextCompare) > 0 Then
 '                                        MsgBox "destpath=" & destpath
                                         del_old_archive_backups destpath, "__archive"
@@ -749,8 +749,8 @@ End Function
 Private Sub del_old_archive_backups(pathtosearch As String, criteria As String)
 Dim fname As String
 Dim fso As New FileSystemObject
-g_oAppLog.AddEntry "deleting archived sqb file - there is a new one"
-fname = Dir(pathtosearch & "\*.sqb")
+g_oAppLog.AddEntry "deleting archived backup file - there is a new one"
+fname = Dir(pathtosearch & "\*.zip")
 Do Until Len(fname) < 3
     If InStr(1, fname, criteria, vbTextCompare) > 0 Then
         fso.Deletefile pathtosearch & "\" & fname, True
@@ -761,8 +761,8 @@ End Sub
 Sub del_old_sql_backups(pathtosearch As String)
 Dim fname As String
 Dim fso As New FileSystemObject
-g_oAppLog.AddEntry "deleting wem main db sqb file going to make a new one"
-fname = Dir(pathtosearch & "\*.sqb")
+g_oAppLog.AddEntry "deleting wem main db backup file going to make a new one"
+fname = Dir(pathtosearch & "\*.zip")
 Do Until Len(fname) < 3
     If InStr(1, fname, "__archive", vbTextCompare) = 0 Then
         fso.Deletefile pathtosearch & "\" & fname, True

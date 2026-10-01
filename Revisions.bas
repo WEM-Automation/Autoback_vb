@@ -64,5 +64,8 @@ Attribute VB_Name = "Revisions"
 '2.33.0     01/31/22    rbh - Changed odbc timeout to 200 seconds for wemsql_archive backup
 '2.34.0     04/15/22    rbh - Modified for asphalt - custom computer names
 '2.35.0     10/19/22    rbh - used sqltoolkit frm wemsqlbackup - updated for large dbs - wemsql_archive
+'2.36.0     09/02/26    ao  - SQL backups compressed from .sqb to .zip (PowerShell/.NET ZipArchive) after BackupDBToFile2.
+'                             All backup search/copy/delete logic and the otherfile/deletefile patterns now use *.zip.
+'                             Compressed backup is also copied into the day folder if it was created elsewhere.
 
 

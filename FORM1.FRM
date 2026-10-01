@@ -433,8 +433,8 @@ Dim BackupAll As Boolean '2.30
                     Else
                         xMDBDirectory = MDBDirectory
                     End If
-                    '2.00 remove any old .sqb files from the directory we are backing up to
-                    fname = Dir(xMDBDirectory & "\" & Format(daynum, "#") & "\*.SQB")
+                    '2.00 remove any old backup zip files from the directory we are backing up to
+                    fname = Dir(xMDBDirectory & "\" & Format(daynum, "#") & "\*.zip")
                     Do Until Len(fname) = 0
                         Dim tf As File
                         Set tf = fs.GetFile(xMDBDirectory & "\" & Format(daynum, "#") & "\" & fname)
@@ -442,8 +442,8 @@ Dim BackupAll As Boolean '2.30
                         Else
                         
                             If DateDiff("d", Now(), tf.DateCreated) <> 0 Then
-                                g_oAppLog.AddEntry "Deleting all .sqb from " & Format(daynum, "#")
-                                Kill xMDBDirectory & "\" & Format(daynum, "#") & "\*.SQB"
+                                g_oAppLog.AddEntry "Deleting all backup zip files from " & Format(daynum, "#")
+                                Kill xMDBDirectory & "\" & Format(daynum, "#") & "\*.zip"
                             End If
                         End If
 '                        If InStr(1, tf.Name, "ARCHIVE", vbTextCompare) > 0 Then
@@ -452,12 +452,21 @@ Dim BackupAll As Boolean '2.30
 '                        End If
                         fname = Dir()
                     Loop
-                    'Kill xMDBDirectory & "\" & Format(daynum, "#") & "\*.SQB"
+                    'Kill xMDBDirectory & "\" & Format(daynum, "#") & "\*.zip"
                     g_oAppLog.AddEntry "making wemsql backup"
 
                     sFinalFullPath_RelApp = oSQLTK.BackupDBToFile2(db, , , xMDBDirectory & "\" & Format(daynum, "#"), BACKUP_STATUS_Consistent, , sql_BaseFolder)
+                    'make sure the compressed backup also lands in the day folder
+                    If Len(sFinalFullPath_RelApp) > 0 Then
+                        If fs.FileExists(sFinalFullPath_RelApp) Then
+                            If UCase(fs.GetParentFolderName(sFinalFullPath_RelApp)) <> UCase(xMDBDirectory & "\" & Format(daynum, "#")) Then
+                                g_oAppLog.AddEntry "copying backup " & sFinalFullPath_RelApp & " to " & xMDBDirectory & "\" & Format(daynum, "#")
+                                fs.CopyFile sFinalFullPath_RelApp, xMDBDirectory & "\" & Format(daynum, "#") & "\" & fs.GetFileName(sFinalFullPath_RelApp), True
+                            End If
+                        End If
+                    End If
                     If UCase(CFG_BACKUPTYPE) = "DCOLLECT" Then              '2.02
-                        'Kill xMDBDirectory & "\SQL\*.SQB"
+                        'Kill xMDBDirectory & "\SQL\*.zip"
                         MODULE11.del_old_sql_backups (xMDBDirectory & "\SQL")
                         sFinalFullPath_RelApp = oSQLTK.BackupDBToFile2(db, , , xMDBDirectory & "\SQL", BACKUP_STATUS_Consistent, , sql_BaseFolder)
                         
@@ -681,7 +690,7 @@ Dim BackupAll As Boolean '2.30
                         If cfg_UseSQL > 0 Then  'doing the SQL shuffle?
                             'V2.20 If InStr(UCase(Source), "WEM.MDB") > 0 Then 'want to copy the data?
                             If InStr(UCase(Source), "WEM.MDB") > 0 Or InStr(UCase(Source), "WEMA.MDB") > 0 Then 'want to copy the data?
-                                If COMPUTER <> "FSERVER" Then   'if we are not the fserver, then we want to copy the .sqb file
+                                If COMPUTER <> "FSERVER" Then   'if we are not the fserver, then we want to copy the backup zip file
                                                                 'but only when it is ready, so we will check the register to make sure we can get in
 '                                    RegInUse.table = "*UPDATE*"  '2.00
 '                                    RegInUse.LockAll = True
@@ -704,18 +713,18 @@ Dim BackupAll As Boolean '2.30
                                 'V2.20
                                 If Right(MDBDirectory, 9) = "\DATABASE" Then
                                     xMDBDirectory = Left(MDBDirectory, Len(MDBDirectory) - 9)
-                                    Source = xMDBDirectory & "\" & Format(daynum, "#") & "\*.SQB"
+                                    Source = xMDBDirectory & "\" & Format(daynum, "#") & "\*.zip"
                                     filetocopy = Dir(Source)
                                     Source = xMDBDirectory & "\" & Format(daynum, "#") & "\" & filetocopy
-                                    Dest = Replace(UCase(Destfile(i)), "DATABASE\WEMA.MDB", "*.SQB")
+                                    Dest = Replace(UCase(Destfile(i)), "DATABASE\WEMA.MDB", "*.zip")
                                     Kill Dest       'get rid of any other wem backup file; we only want the last one
                                     Dest = Replace(UCase(Destfile(i)), "DATABASE\WEMA.MDB", filetocopy)
                                 Else
                                 
-                                    Source = MDBDirectory & "\" & Format(daynum, "#") & "\*.SQB"
+                                    Source = MDBDirectory & "\" & Format(daynum, "#") & "\*.zip"
                                     filetocopy = Dir(Source)
                                     Source = MDBDirectory & "\" & Format(daynum, "#") & "\" & filetocopy
-                                    Dest = Replace(UCase(Destfile(i)), "WEM.MDB", "*.SQB")
+                                    Dest = Replace(UCase(Destfile(i)), "WEM.MDB", "*.zip")
                                     Kill Dest       'get rid of any other wem backup file; we only want the last one
                                     Dest = Replace(UCase(Destfile(i)), "WEM.MDB", filetocopy)
                                 
@@ -848,7 +857,7 @@ Dim fso As New FileSystemObject
 Dim fname As String
 Dim sFinalFullPath_RelApp
 Dim sf As File
-fname = Dir(src & "\*.sqb")
+fname = Dir(src & "\*.zip")
 'MsgBox "src = " & src & ",dst=" & dst
 
 Do Until Len(fname) < 3

@@ -1,6 +1,6 @@
 F:\WEM\DATA\*.TMP
-f:\redundancy\fserver\wemdata\wem\data\*.sqb
-f:\redundancy\fserver\wemdata\wem\data\temp\*.sqb
+f:\redundancy\fserver\wemdata\wem\data\*.zip
+f:\redundancy\fserver\wemdata\wem\data\temp\*.zip
 C:\WEM\WEMREDUNDANCY\COREFS\*.TMP
 C:\WEM\WEMREDUNDANCY\WWFS\*.LGH
 C:\WEM\WEMREDUNDANCY\WWFS\*.WBK

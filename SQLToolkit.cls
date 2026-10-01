@@ -1535,9 +1535,9 @@ If sDestFolder_RelApp <> "" Then
     'rename temp file to final name
 'g_oAppLog.AddEntry "TAG12.7"
     Name sCustomTempFilePath_RelApp As sCustomFilePath_RelApp
-    'return the custom final file path
+    'compress the .sqb backup into a .zip file (same base name), then remove the original .sqb
+    BackupDBToFile2 = CompressBackupFileToZip(sCustomFilePath_RelApp)
 'g_oAppLog.AddEntry "TAG12.8"
-    BackupDBToFile2 = sCustomFilePath_RelApp
 Else
 'g_oAppLog.AddEntry "TAG12.9"
     'create final path within the \Temp folder
@@ -1549,8 +1549,8 @@ Else
     'rename temp file to final name
     Name sTempFilePath_RelApp As sFilePath_RelApp
 'g_oAppLog.AddEntry "TAG12.12"
-    'return final file path in the temp folder
-    BackupDBToFile2 = sFilePath_RelApp
+    'compress the .sqb backup into a .zip file (same base name), then remove the original .sqb
+    BackupDBToFile2 = CompressBackupFileToZip(sFilePath_RelApp)
 'g_oAppLog.AddEntry "TAG12.13"
 End If
 'g_oAppLog.AddEntry "TAG13"
@@ -1558,6 +1558,108 @@ End If
 Exit Function
 EH:
 ErrHandlerPrivate False, "SQLToolkit", "BackupDBToFile2"
+End Function
+
+'Compresses sSourceFilePath_RelApp (typically a ".sqb" backup file) into a new ".zip" file with the
+'same base name, in the same folder.  Uses PowerShell's Compress-Archive, run synchronously and
+'hidden via WScript.Shell, so this works reliably from a Windows service or scheduled task even when
+'there is no interactive desktop session (unlike the Shell.Application/Explorer "send to zip" trick,
+'which requires an interactive shell and can hang or silently fail when run unattended).
+'If compression succeeds, the original file is deleted and the path to the new .zip file is
+'returned.  If compression fails for any reason, the original file is left alone (never deleted)
+'and its path is returned unchanged - a compression failure must never prevent the backup file
+'from existing.
+Private Function CompressBackupFileToZip(ByVal sSourceFilePath_RelApp As String) As String
+On Error GoTo EH
+Dim sZipFilePath_RelApp As String
+Dim oShell As Object
+Dim oExec As Object
+Dim sCmd As String
+Dim lExitCode As Long
+Dim sOutput As String
+Dim lWaitCount As Long
+Dim lLastSize As Currency
+Dim lCurSize As Currency
+Dim bReady As Boolean
+
+'default return value is the original (uncompressed) path, in case compression fails
+CompressBackupFileToZip = sSourceFilePath_RelApp
+
+'the source .sqb may have just been created/renamed over a network share - wait until the file
+'both (a) exists and (b) has a stable size across two checks, so we never hand PowerShell a path
+'that isn't fully visible/settled yet (safety timeout ~30 seconds)
+lLastSize = -1
+bReady = False
+For lWaitCount = 1 To 60
+    If m_oFSO.FileExists(sSourceFilePath_RelApp) Then
+        lCurSize = m_oFSO.GetFile(sSourceFilePath_RelApp).Size
+        If lCurSize = lLastSize Then
+            bReady = True
+            Exit For
+        End If
+        lLastSize = lCurSize
+    Else
+        lLastSize = -1
+    End If
+    Sleep 500
+Next lWaitCount
+
+'if, after waiting, the source file still doesn't actually exist, there's nothing to compress
+If Not m_oFSO.FileExists(sSourceFilePath_RelApp) Then
+    m_oAppLog.AddEntry "CompressBackupFileToZip:  source file '" & sSourceFilePath_RelApp & "' does not exist (even after waiting) - nothing to compress"
+    Exit Function
+End If
+
+If Not bReady Then
+    m_oAppLog.AddEntry "CompressBackupFileToZip:  source file '" & sSourceFilePath_RelApp & "' never reached a stable size - attempting compression anyway"
+End If
+
+'build the target .zip path (same folder/base name as the source file)
+sZipFilePath_RelApp = m_oFSO.BuildPath(m_oFSO.GetParentFolderName(sSourceFilePath_RelApp), _
+                                       m_oFSO.GetBaseName(sSourceFilePath_RelApp) & ".zip")
+
+'make sure it doesn't already exist
+DeleteFile_NoError sZipFilePath_RelApp
+
+'write a temp .ps1 script file and run it - this avoids command-line quoting issues and lets us
+'use LoadWithPartialName (works on all PowerShell versions including v2, unlike Add-Type -AssemblyName)
+Dim sScriptPath As String
+Dim iScript As Integer
+sScriptPath = m_oFSO.BuildPath(Environ$("TEMP"), "zip_backup.ps1")
+iScript = FreeFile
+Open sScriptPath For Output As #iScript
+Print #iScript, "[Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null"
+Print #iScript, "[Reflection.Assembly]::LoadWithPartialName('System.IO.Compression') | Out-Null"
+Print #iScript, "$src = '" & Replace(sSourceFilePath_RelApp, "'", "''") & "'"
+Print #iScript, "$dst = '" & Replace(sZipFilePath_RelApp, "'", "''") & "'"
+Print #iScript, "if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Force }"
+Print #iScript, "$fs = [System.IO.File]::Open($dst, [System.IO.FileMode]::Create)"
+Print #iScript, "$zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)"
+Print #iScript, "try { [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $src, (Split-Path -Leaf $src)) | Out-Null }"
+Print #iScript, "finally { $zip.Dispose(); $fs.Dispose() }"
+Close #iScript
+
+'run the script hidden and wait for completion
+Set oShell = CreateObject("WScript.Shell")
+oShell.Run "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File """ & sScriptPath & """", 0, True
+
+'clean up the temp script
+DeleteFile_NoError sScriptPath
+
+'if the zip was created successfully, remove the original uncompressed file and return the zip path
+If m_oFSO.FileExists(sZipFilePath_RelApp) Then
+    DeleteFile_NoError sSourceFilePath_RelApp
+    CompressBackupFileToZip = sZipFilePath_RelApp
+Else
+    m_oAppLog.AddEntry "CompressBackupFileToZip:  failed to compress '" & sSourceFilePath_RelApp & "' - keeping original .sqb file"
+    DeleteFile_NoError sZipFilePath_RelApp
+End If
+
+Exit Function
+EH:
+'don't let a compression failure abort the backup - keep the original .sqb file and log the problem
+m_oAppLog.AddEntry "CompressBackupFileToZip:  error compressing '" & sSourceFilePath_RelApp & "' - " & Err.Description
+CompressBackupFileToZip = sSourceFilePath_RelApp
 End Function
 
 '--delete if not used.

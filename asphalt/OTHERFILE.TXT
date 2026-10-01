@@ -4,7 +4,7 @@
 \\w?????FSERVER\WEMDATA\WEM\DATA\DATABASE\*.BAT,\\wrcomp\WEMDATA\WEM\DATA\DATABASE
 \\w?????FSERVER\WEMDATA\WEM\DATA\REPORTS\*.rpt,\\wrcomp\WEMDATA\WEM\DATA\REPORTS
 \\w?????FSERVER\WEMDATA\WEM\DATA\TICKETS\*.rpt,\\wrcomp\WEMDATA\WEM\DATA\TICKETS
-\\w?????FSERVER\WEMDATA\WEM\DATA\*.SQB,\\wrcomp\WEMDATA\WEM\DATA
+\\w?????FSERVER\WEMDATA\WEM\DATA\*.zip,\\wrcomp\WEMDATA\WEM\DATA
 \\w?????FSERVER\WEM\wemspeak\*.*,\\wrcomp\WEM\wemspeak
 \\w?????FSERVER\WEM\wemspeak\template\*.tpl,\\wrcomp\WEM\wemspeak\template
 \\w?????FSERVER\WEM\wemspeak\std_req\*.req,\\wrcomp\WEM\wemspeak\std_req
