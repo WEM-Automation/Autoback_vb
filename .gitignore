@@ -1,0 +1,46 @@
+# Source-only repo for the VB6 AutoBack project.
+# Keep VB6 source, including binary source resources (.frx, .ctx, .res),
+# and the backup-job config files (copyfile/otherfile/deletefile .txt, .ini, .bat).
+
+# --- Compiled / build output ---
+*.exe
+*.dll
+*.ocx
+*.obj
+*.lib
+*.exp
+*.pdb
+*.tlb
+*.olb
+
+# --- VB6 per-user / source-control cruft ---
+*.vbw
+*.scc
+mssccprj.scc
+vssver*.scc
+
+# --- Installers / archives ---
+*.msi
+*.cab
+*.zip
+*.7z
+*.rar
+
+# --- Databases / data files ---
+*.mdb
+*.accdb
+*.ldb
+*.laccdb
+*.mdf
+*.ldf
+*.sqb
+
+# --- Logs / temp / OS junk ---
+log/
+*.log
+*.bak
+*.old
+*.tmp
+Thumbs.db
+desktop.ini
+~$*

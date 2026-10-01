@@ -1,0 +1,7 @@
+2025-12-31 | Cascade | Initial creation of .NET 4.0 WinForms conversion scaffold (solution + startup/tray skeleton)
+2025-12-31 | Cascade | Added x86 platform target for Access 2003 MDB compatibility, MdbHelper (OleDb Jet 4.0), ConfigurationManager (INI parsing)
+2025-12-31 | Cascade | Implemented FileListManager (copyfile.txt, otherfile.txt, deletefile.txt parsing), BackupEngine (drive space check, file deletion, daily folder creation), integrated timer-based backup scheduling into Form1
+2025-12-31 | Cascade | Implemented SqlServerBackup class using SqlConnection and T-SQL BACKUP DATABASE (replaces VB6 SQLDMO), integrated SQL backup into BackupEngine with temp file safety mechanism
+2025-12-31 | Cascade | Implemented DCollectionManager for reading dcollection.mdb tables (WEM, WEMDATA, WINNT, PROGRAM FILES) and copying files based on computer name patterns, integrated into BackupEngine with FSERVER/WSERVER/UNRCV/CLIENT support
+2025-12-31 | Cascade | Implemented FileCopyManager for copyfile.txt and otherfile.txt operations with file timestamp comparison, pattern matching, and integrated into BackupEngine. VB6 to C# conversion complete - all major functionality ported.
+2025-12-31 | Cascade | Bug fixes: IndexOutOfRangeException in Form1 timer when BackupHours empty, null reference checks in DCollectionManager/FileCopyManager Path.GetDirectoryName, SQL injection protection in backup command, temp file cleanup on SQL backup failure, removed incorrect source directory creation in DCollectionManager
